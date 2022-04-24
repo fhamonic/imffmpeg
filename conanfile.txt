@@ -1,9 +1,16 @@
 [requires]
-tbb/2020.3
-boost/1.76.0
 range-v3/0.11.0
-ffmpeg/4.2.1
-gtest/cci.20210126
+
+imgui/1.87
+glfw/3.3.6
+glew/2.2.0
 
 [generators]
 cmake
+
+[imports]
+./res/bindings, imgui_impl_glfw.cpp -> ../imgui_backends
+./res/bindings, imgui_impl_opengl3.cpp -> ../imgui_backends
+./res/bindings, imgui_impl_glfw.h -> ../imgui_backends
+./res/bindings, imgui_impl_opengl3.h -> ../imgui_backends
+./res/bindings, imgui_impl_opengl3_loader.h -> ../imgui_backends

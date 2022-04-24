@@ -1,3 +1,6 @@
-/build
-*.out
 .vscode
+/build
+*.log
+*.data
+/imgui_backends
+imgui.ini
