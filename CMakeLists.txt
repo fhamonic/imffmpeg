@@ -31,11 +31,11 @@ include(CMakeBuildTypeUtils)
 # ################### Packages ####################
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
-find_package(FFMPEG REQUIRED)
 
 # ################### ImFFmpeg #####################
-add_executable(imffmpeg src/main.cpp imgui_backends/imgui_impl_glfw.cpp
+add_executable(imffmpeg src/main.cpp imgui_backends/imgui_impl_glfw.cpp dependencies/ImGuiFileDialog/ImGuiFileDialog.cpp
                         imgui_backends/imgui_impl_opengl3.cpp)
-target_include_directories(imffmpeg PUBLIC include imgui_backends)
-target_link_libraries(imffmpeg PUBLIC CONAN_PKG::imgui CONAN_PKG::glfw
-                                      CONAN_PKG::glew ${FFMPEG_LIBRARIES})
+target_include_directories(imffmpeg PUBLIC include imgui_backends dependencies)
+target_link_libraries(imffmpeg PUBLIC CONAN_PKG::imgui CONAN_PKG::glfw CONAN_PKG::glew)
+target_link_libraries(imffmpeg PUBLIC CONAN_PKG::boost CONAN_PKG::nlohmann_json)
+

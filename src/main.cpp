@@ -33,6 +33,7 @@ static void glfw_error_callback(int error, const char * description) {
 #include <optional>
 
 #include "command_gui.hpp"
+#include "commands/probe_gui.hpp"
 #include "commands/transcode_gui.hpp"
 
 int main(int, char **) {
@@ -126,6 +127,10 @@ int main(int, char **) {
         float menu_bar_height;
         if(ImGui::BeginMainMenuBar()) {
             if(ImGui::BeginMenu("Commands")) {
+                if(ImGui::MenuItem("Probe")) {
+                    algorithm.emplace(
+                        std::make_unique<ImFFmpeg::ProbeGUI>());
+                }
                 if(ImGui::MenuItem("Transcode")) {
                     algorithm.emplace(
                         std::make_unique<ImFFmpeg::TranscodeGUI>());
