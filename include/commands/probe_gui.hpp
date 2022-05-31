@@ -35,7 +35,7 @@ public:
         ImGui::SameLine();
         if(ImGui::Button("...")) {
             ImGuiFileDialog::Instance()->OpenDialog(
-                "ChooseFileDlgKey", "Choose File", ".mkv,.mp4,.avi", ".");
+                "ChooseFileDlgKey", "Choose File", ".mkv,.mp4,.avi", file_path);
         }
         if(ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
             if(ImGuiFileDialog::Instance()->IsOk()) {
