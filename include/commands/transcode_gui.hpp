@@ -83,6 +83,29 @@ private:
                     ss << ' ' << fallback_video_codec << " -preset " << preset
                        << " -crf " << crf;
                 }
+                if(custom_target_screen) {
+                    int stream_width = stream["width"].get<int>();
+                    int stream_height = stream["height"].get<int>();
+                    int screen_width =
+                        target_screens_widths[target_screen_index];
+                    int screen_height =
+                        target_screens_heights[target_screen_index];
+
+                    if(stream_width > screen_width ||
+                       stream_height > screen_height) {
+                        float stream_ratio = stream_width / stream_height;
+                        float screen_ratio = screen_width / screen_height;
+                        ss << " -filter:" << stream_cpt << " scale="
+                           << (stream_ratio < screen_ratio ? -1 : screen_width)
+                           << ':'
+                           << (stream_ratio > screen_ratio ? -1
+                                                           : screen_height);
+                    }
+                    if(custom_video_profile) {
+                        ss << " -profile:" << stream_cpt << ' '
+                           << video_profile;
+                    }
+                }
             } else if(stream_type == "audio") {
                 ss << " -map 0:" << stream_index << " -c:" << stream_cpt;
                 if(contains(accepted_audio_codecs,
@@ -145,8 +168,8 @@ public:
     std::vector<std::filesystem::path> files;
     std::vector<std::filesystem::path>::const_iterator file_iterator;
     void showSourceDirHeader() {
-        if(ImGui::CollapsingHeader("Source")) {
-            ImGui::Text("Source Directory:  ");
+        if(ImGui::CollapsingHeader("Input")) {
+            ImGui::Text("Input directory:   ");
             ImGui::SameLine();
             ImGui::InputText("##source_dir", source_dir_path_buffer, 1024);
             ImGui::SameLine();
@@ -177,6 +200,14 @@ public:
         "ultrafast", "superfast", "veryfast", "faster",  "fast",
         "medium",    "slow",      "slower",   "veryslow"};
     int preset_index = 6;
+    char video_profile[16] = "high";
+    bool custom_video_profile = true;
+    bool custom_target_screen = true;
+    std::array<const char *, 4> target_screens = {
+        "720×480 16:9", "1280x720 16:9", "1920x1080 16:9", "3840x2060 16:9"};
+    std::array<int, 4> target_screens_widths = {720, 1280, 1920, 3840};
+    std::array<int, 4> target_screens_heights = {480, 720, 1080, 2060};
+    int target_screen_index = 2;
     void showVideoHeader() {
         if(ImGui::CollapsingHeader("Video")) {
             ImGui::Text("Accepted codecs:   ");
@@ -197,6 +228,19 @@ public:
             ImGui::SameLine();
             ImGui::Combo("##preset", &preset_index, presets.data(),
                          presets.size());
+
+            ImGui::Text("Profile:       ");
+            ImGui::SameLine();
+            ImGui::Checkbox("##custom_video_profile", &custom_video_profile);
+            ImGui::SameLine();
+            ImGui::InputText("##video_profile", video_profile, 16);
+
+            ImGui::Text("Target screen: ");
+            ImGui::SameLine();
+            ImGui::Checkbox("##custom_target_screen", &custom_target_screen);
+            ImGui::SameLine();
+            ImGui::Combo("##target_screen", &target_screen_index,
+                         target_screens.data(), target_screens.size());
         }
     }
 
