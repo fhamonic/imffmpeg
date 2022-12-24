@@ -1,10 +1,10 @@
 [requires]
-range-v3/0.11.0
-boost/1.79.0
-nlohmann_json/3.10.5
+range-v3/0.12.0
+boost/1.80.0
+nlohmann_json/3.11.2
 
-imgui/1.87
-glfw/3.3.6
+imgui/cci.20220621+1.88.docking
+glfw/3.3.8
 glew/2.2.0
 
 [generators]

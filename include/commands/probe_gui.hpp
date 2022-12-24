@@ -42,6 +42,7 @@ public:
                 std::string tmp_file_path =
                     ImGuiFileDialog::Instance()->GetFilePathName();
                 std::strcpy(file_path, tmp_file_path.c_str());
+                file_properties = ffprobe(std::filesystem::path(file_path));
             }
             ImGuiFileDialog::Instance()->Close();
         }
@@ -58,6 +59,13 @@ public:
         ImGui::Begin("Streams", nullptr,
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
+        if(file_properties.contains("format")) {
+            auto && format = file_properties["format"];
+            ImGui::Text(
+                ("filename: " + format["filename"].get<std::string>()).c_str());
+            ImGui::Text(
+                ("duration: " + format["duration"].get<std::string>()).c_str());
+        }
         if(file_properties.contains("streams")) {
             for(auto && stream : file_properties["streams"]) {
                 if(ImGui::CollapsingHeader(
