@@ -290,10 +290,10 @@ public:
     bool custom_pixel_format = true;
     char pixel_format[16] = "yuv420p";
     bool custom_target_screen = true;
-    std::array<const char *, 4> target_screens = {
-        "720×480 16:9", "1280x720 16:9", "1920x1080 16:9", "3840x2060 16:9"};
-    std::array<int, 4> target_screens_widths = {720, 1280, 1920, 3840};
-    std::array<int, 4> target_screens_heights = {480, 720, 1080, 2060};
+    std::array<const char *, 5> target_screens = {
+        "800x240 3DS", "720×480 16:9", "1280x720 16:9", "1920x1080 16:9", "3840x2060 16:9"};
+    std::array<int, 5> target_screens_widths = {800, 720, 1280, 1920, 3840};
+    std::array<int, 5> target_screens_heights = {240, 720, 1080, 2060};
     int target_screen_index = 2;
     bool fast_start;
     void showVideoHeader() {
