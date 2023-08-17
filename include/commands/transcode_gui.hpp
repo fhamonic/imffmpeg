@@ -71,69 +71,151 @@ private:
 
         int stream_cpt = 0;
         for(auto && stream : file_properties["streams"]) {
-            int stream_index = stream["index"].get<int>();
             std::string stream_type = stream["codec_type"].get<std::string>();
+            if(stream_type != "video") continue;
+            int stream_index = stream["index"].get<int>();
+            ss << " -map 0:" << stream_index << " -c:" << stream_cpt;
+            if(contains(accepted_video_codecs,
+                        stream["codec_name"].get<std::string>())) {
+                ss << " copy";
+            } else {
+                ss << ' ' << fallback_video_codec << " -preset " << preset
+                   << " -crf " << crf;
+                if(custom_video_profile) {
+                    ss << " -profile:" << stream_cpt << ' ' << video_profile;
+                }
+                if(custom_pixel_format) {
+                    ss << " -pix_fmt:" << stream_cpt << ' ' << pixel_format;
+                }
+            }
+            if(custom_target_screen) {
+                int stream_width = stream["width"].get<int>();
+                int stream_height = stream["height"].get<int>();
+                int screen_width = target_screens_widths[target_screen_index];
+                int screen_height = target_screens_heights[target_screen_index];
 
-            if(stream_type == "video") {
-                ss << " -map 0:" << stream_index << " -c:" << stream_cpt;
-                if(contains(accepted_video_codecs,
-                            stream["codec_name"].get<std::string>())) {
-                    ss << " copy";
-                } else {
-                    ss << ' ' << fallback_video_codec << " -preset " << preset
-                       << " -crf " << crf;
-                }
-                if(custom_target_screen) {
-                    int stream_width = stream["width"].get<int>();
-                    int stream_height = stream["height"].get<int>();
-                    int screen_width =
-                        target_screens_widths[target_screen_index];
-                    int screen_height =
-                        target_screens_heights[target_screen_index];
-
-                    if(stream_width > screen_width ||
-                       stream_height > screen_height) {
-                        float stream_ratio = stream_width / stream_height;
-                        float screen_ratio = screen_width / screen_height;
-                        ss << " -filter:" << stream_cpt << " scale="
-                           << (stream_ratio < screen_ratio ? -1 : screen_width)
-                           << ':'
-                           << (stream_ratio > screen_ratio ? -1
-                                                           : screen_height);
-                    }
-                    if(custom_video_profile) {
-                        ss << " -profile:" << stream_cpt << ' '
-                           << video_profile;
-                    }
-                }
-            } else if(stream_type == "audio") {
-                ss << " -map 0:" << stream_index << " -c:" << stream_cpt;
-                if(contains(accepted_audio_codecs,
-                            stream["codec_name"].get<std::string>())) {
-                    ss << " copy";
-                } else {
-                    ss << ' ' << fallback_audio_codec;
-                }
-                if(stream["tags"].contains("language")) {
-                    if(stream["tags"]["language"].get<std::string>() == "eng") {
-                        ss << " -disposition:" << stream_cpt << " default";
-                    } else {
-                        ss << " -disposition:" << stream_cpt << " -default";
-                    }
-                }
-            } else if(stream_type == "subtitle") {
-                ss << " -map 0:" << stream_index << " -c:" << stream_cpt
-                   << " copy";
-                if(stream["tags"].contains("language")) {
-                    if(stream["tags"]["language"].get<std::string>() == "fre") {
-                        ss << " -disposition:" << stream_cpt << " default";
-                    } else {
-                        ss << " -disposition:" << stream_cpt << " -default";
-                    }
+                if(stream_width > screen_width ||
+                   stream_height > screen_height) {
+                    float stream_ratio = stream_width / stream_height;
+                    float screen_ratio = screen_width / screen_height;
+                    ss << " -filter:" << stream_cpt << " scale="
+                       << (stream_ratio < screen_ratio ? -1 : screen_width)
+                       << ':'
+                       << (stream_ratio > screen_ratio ? -1 : screen_height);
                 }
             }
             ++stream_cpt;
         }
+        for(auto && stream : file_properties["streams"]) {
+            std::string stream_type = stream["codec_type"].get<std::string>();
+            if(stream_type != "audio") continue;
+            int stream_index = stream["index"].get<int>();
+
+            ss << " -map 0:" << stream_index << " -c:" << stream_cpt;
+            if(contains(accepted_audio_codecs,
+                        stream["codec_name"].get<std::string>())) {
+                ss << " copy";
+            } else {
+                ss << ' ' << fallback_audio_codec;
+            }
+            if(custom_default_audio_lang &&
+               stream["tags"].contains("language")) {
+                if(stream["tags"]["language"].get<std::string>() ==
+                   default_audio_lang) {
+                    ss << " -disposition:" << stream_cpt << " default";
+                } else {
+                    ss << " -disposition:" << stream_cpt << " -default";
+                }
+            }
+            ++stream_cpt;
+        }
+        for(auto && stream : file_properties["streams"]) {
+            std::string stream_type = stream["codec_type"].get<std::string>();
+            if(stream_type != "subtitle") continue;
+            int stream_index = stream["index"].get<int>();
+            ss << " -map 0:" << stream_index << " -c:" << stream_cpt << " copy";
+            if(stream["tags"].contains("language")) {
+                if(stream["tags"]["language"].get<std::string>() == "fre") {
+                    ss << " -disposition:" << stream_cpt << " default";
+                } else {
+                    ss << " -disposition:" << stream_cpt << " -default";
+                }
+            }
+            ++stream_cpt;
+        }
+        if(fast_start) {
+            ss << " -movflags +faststart";
+        }
+
+        // for(auto && stream : file_properties["streams"]) {
+        //     int stream_index = stream["index"].get<int>();
+        //     std::string stream_type =
+        //     stream["codec_type"].get<std::string>();
+
+        //     if(stream_type == "video") {
+        //         ss << " -map 0:" << stream_index << " -c:" << stream_cpt;
+        //         if(contains(accepted_video_codecs,
+        //                     stream["codec_name"].get<std::string>())) {
+        //             ss << " copy";
+        //         } else {
+        //             ss << ' ' << fallback_video_codec << " -preset " <<
+        //             preset
+        //                << " -crf " << crf;
+        //         }
+        //         if(custom_target_screen) {
+        //             int stream_width = stream["width"].get<int>();
+        //             int stream_height = stream["height"].get<int>();
+        //             int screen_width =
+        //                 target_screens_widths[target_screen_index];
+        //             int screen_height =
+        //                 target_screens_heights[target_screen_index];
+
+        //             if(stream_width > screen_width ||
+        //                stream_height > screen_height) {
+        //                 float stream_ratio = stream_width / stream_height;
+        //                 float screen_ratio = screen_width / screen_height;
+        //                 ss << " -filter:" << stream_cpt << " scale="
+        //                    << (stream_ratio < screen_ratio ? -1 :
+        //                    screen_width)
+        //                    << ':'
+        //                    << (stream_ratio > screen_ratio ? -1
+        //                                                    : screen_height);
+        //             }
+        //             if(custom_video_profile) {
+        //                 ss << " -profile:" << stream_cpt << ' '
+        //                    << video_profile;
+        //             }
+        //         }
+        //     } else if(stream_type == "audio") {
+        //         ss << " -map 0:" << stream_index << " -c:" << stream_cpt;
+        //         if(contains(accepted_audio_codecs,
+        //                     stream["codec_name"].get<std::string>())) {
+        //             ss << " copy";
+        //         } else {
+        //             ss << ' ' << fallback_audio_codec;
+        //         }
+        //         if(stream["tags"].contains("language")) {
+        //             if(stream["tags"]["language"].get<std::string>() ==
+        //             "eng") {
+        //                 ss << " -disposition:" << stream_cpt << " default";
+        //             } else {
+        //                 ss << " -disposition:" << stream_cpt << " -default";
+        //             }
+        //         }
+        //     } else if(stream_type == "subtitle") {
+        //         ss << " -map 0:" << stream_index << " -c:" << stream_cpt
+        //            << " copy";
+        //         if(stream["tags"].contains("language")) {
+        //             if(stream["tags"]["language"].get<std::string>() ==
+        //             "fre") {
+        //                 ss << " -disposition:" << stream_cpt << " default";
+        //             } else {
+        //                 ss << " -disposition:" << stream_cpt << " -default";
+        //             }
+        //         }
+        //     }
+        //     ++stream_cpt;
+        // }
 
         std::filesystem::path output_file_path =
             std::filesystem::path(output_dir_path_buffer) /
@@ -155,6 +237,7 @@ private:
         }
 
         std::string cmd = make_command();
+        // std::cout << cmd << std::endl;
         progress_stream = bp::ipstream();
         child_process = bp::child(cmd, bp::std_out > progress_stream);
 
@@ -200,14 +283,17 @@ public:
         "ultrafast", "superfast", "veryfast", "faster",  "fast",
         "medium",    "slow",      "slower",   "veryslow"};
     int preset_index = 6;
-    char video_profile[16] = "high";
     bool custom_video_profile = true;
+    char video_profile[16] = "high";
+    bool custom_pixel_format = true;
+    char pixel_format[16] = "yuv420p";
     bool custom_target_screen = true;
     std::array<const char *, 4> target_screens = {
         "720×480 16:9", "1280x720 16:9", "1920x1080 16:9", "3840x2060 16:9"};
     std::array<int, 4> target_screens_widths = {720, 1280, 1920, 3840};
     std::array<int, 4> target_screens_heights = {480, 720, 1080, 2060};
     int target_screen_index = 2;
+    bool fast_start;
     void showVideoHeader() {
         if(ImGui::CollapsingHeader("Video")) {
             ImGui::Text("Accepted codecs:   ");
@@ -235,18 +321,30 @@ public:
             ImGui::SameLine();
             ImGui::InputText("##video_profile", video_profile, 16);
 
+            ImGui::Text("Pixel format:  ");
+            ImGui::SameLine();
+            ImGui::Checkbox("##custom_pixel_format", &custom_pixel_format);
+            ImGui::SameLine();
+            ImGui::InputText("##pixel_format", pixel_format, 16);
+
             ImGui::Text("Target screen: ");
             ImGui::SameLine();
             ImGui::Checkbox("##custom_target_screen", &custom_target_screen);
             ImGui::SameLine();
             ImGui::Combo("##target_screen", &target_screen_index,
                          target_screens.data(), target_screens.size());
+            
+            ImGui::Text("Move flags for fast start:  ");
+            ImGui::SameLine();
+            ImGui::Checkbox("##fast_start", &fast_start);
         }
     }
 
     char accepted_audio_codecs_buffer[64] = "flac,aac,eac3,opus";
     char fallback_audio_codec_buffer[16] = "aac";
-    bool custom_birate = false;
+    bool custom_default_audio_lang = false;
+    char default_audio_lang[8] = "eng";
+    bool custom_audio_bitrate = false;
     int audio_bitrate = 128;
     void showAudioHeader() {
         if(ImGui::CollapsingHeader("Audio")) {
@@ -260,11 +358,18 @@ public:
             ImGui::InputText("##fallback_audio_codec",
                              fallback_audio_codec_buffer, 16);
 
+            ImGui::Text("Default lang.: ");
+            ImGui::SameLine();
+            ImGui::Checkbox("##custom_default_audio_lang",
+                            &custom_default_audio_lang);
+            ImGui::SameLine();
+            ImGui::InputText("##default_audio_lang", default_audio_lang, 8);
+
             ImGui::Text("Bitrate:       ");
             ImGui::SameLine();
-            ImGui::Checkbox("##custom_bitrate", &custom_birate);
+            ImGui::Checkbox("##custom_audio_bitrate", &custom_audio_bitrate);
             ImGui::SameLine();
-            ImGui::InputInt("##bitrate", &audio_bitrate);
+            ImGui::InputInt("##audio_bitrate", &audio_bitrate);
         }
     }
 
@@ -328,7 +433,7 @@ public:
         }
         if(transcoding) {
             ImGui::SameLine();
-            ImGui::Text("Transcoding: %d / %d",
+            ImGui::Text("Transcoding: %ld / %ld",
                         std::distance(files.cbegin(), file_iterator),
                         files.size());
         }

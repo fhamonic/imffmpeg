@@ -42,6 +42,7 @@ public:
                 std::string tmp_file_path =
                     ImGuiFileDialog::Instance()->GetFilePathName();
                 std::strcpy(file_path, tmp_file_path.c_str());
+                file_properties = ffprobe(std::filesystem::path(file_path));
             }
             ImGuiFileDialog::Instance()->Close();
         }
@@ -58,6 +59,13 @@ public:
         ImGui::Begin("Streams", nullptr,
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
+        if(file_properties.contains("format")) {
+            auto && format = file_properties["format"];
+            ImGui::Text(
+                "filename: %s", format["filename"].get<std::string>().c_str());
+            ImGui::Text(
+                "duration: %s", format["duration"].get<std::string>().c_str());
+        }
         if(file_properties.contains("streams")) {
             for(auto && stream : file_properties["streams"]) {
                 if(ImGui::CollapsingHeader(
@@ -65,19 +73,16 @@ public:
                         stream["codec_type"].get<std::string>())
                            .c_str())) {
                     if(stream["tags"].contains("title"))
-                        ImGui::Text(("title: " +
-                                     stream["tags"]["title"].get<std::string>())
-                                        .c_str());
+                        ImGui::Text("title: %s",
+                                     stream["tags"]["title"].get<std::string>().c_str());
 
-                    ImGui::Text(("codec_name: " +
-                                 stream["codec_name"].get<std::string>())
-                                    .c_str());
+                    ImGui::Text("codec_name: %s",
+                                 stream["codec_name"].get<std::string>().c_str());
 
                     if(stream["tags"].contains("language"))
                         ImGui::Text(
-                            ("language: " +
-                             stream["tags"]["language"].get<std::string>())
-                                .c_str());
+                            "language: %s",
+                             stream["tags"]["language"].get<std::string>().c_str());
                 }
             }
         }
