@@ -1,6 +1,4 @@
 .vscode
 /build
-*.log
-*.data
-/imgui_backends
+CMakeUserPresets.json
 imgui.ini
